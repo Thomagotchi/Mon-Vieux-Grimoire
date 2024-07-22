@@ -10,8 +10,12 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@types/mongoose-unique-validator": "^1.0.9",
+    "bcrypt": "^5.1.1",
     "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.8.0",
-    "mongoose": "^8.5.1"
+    "mongoose": "^8.5.1",
+    "mongoose-unique-validator": "^5.0.1"
   }
 }
