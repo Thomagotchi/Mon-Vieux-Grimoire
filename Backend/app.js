@@ -1,8 +1,10 @@
 const express = require('express');
 const mongoose = require('mongoose');
 
-const bookRoute = require('./routes/bookRouter')
-const userRoute = require('./routes/userRouter')
+const path = require('path');
+
+const bookRouter = require('./routes/book')
+const userRouter = require('./routes/user')
 
 mongoose.connect('mongodb+srv://admin:admin@mon-vieux-grimoire.gzech7n.mongodb.net/?retryWrites=true&w=majority&appName=mon-vieux-grimoire',
     { useNewUrlParser: true,
@@ -28,7 +30,8 @@ app.use((req, res, next) => {
 
 
 
-app.use('/api/auth', userRoute)
-app.use('/api/books', bookRoute)
+app.use('/api/auth', userRouter)
+app.use('/api/books', bookRouter)
+app.use('/images', express.static(path.join(__dirname, 'images')))
 
 module.exports = app;
