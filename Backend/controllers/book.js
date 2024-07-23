@@ -1,4 +1,5 @@
 const Book = require('../models/book')
+const fs = require('fs')
 
 exports.createBook = (req, res) => {
     const bookObject = JSON.parse(req.body.book)
@@ -18,9 +19,24 @@ exports.createBook = (req, res) => {
 }
 
 exports.deleteBook = (req, res) => {
-    Book.deleteOne({ _id: req.params.id })
-        .then((book) => res.status(200).json(book))
-        .catch((error) => res.status(404).json({ error }))
+    Book.findOne({ _id: req.params.id })
+        .then(book => {
+            if (book.userId != req.auth.userId) {
+                res.status(401).json({ message: 'Pas autorisé de supprimé ce livre' })
+            } else {
+                const filename = book.imageUrl.split('/images/')[1]
+                fs.unlink(`images/${filename}`, () => {
+                    Book.deleteOne({_id: req.params.id})
+                        .then(() => { res.status(200).json({ message: 'Livre supprimé !' })})
+                        .catch(error => {res.status(401).json({ error })})
+                })
+            }
+        })
+        .catch((error) => res.status(500).json({ error }))
+
+    // Book.deleteOne({ _id: req.params.id })
+    //     .then((book) => res.status(200).json(book))
+    //     .catch((error) => res.status(404).json({ error }))
 }
 
 exports.modifyBook = (req, res) => {
@@ -57,7 +73,7 @@ exports.getBestBooks = (req, res) => {
             $group: {
                 _id: '$_id',
                 title: { $first: '$title' },
-                averageRating: { $avg: '$rating.grade' },
+                averageRating: { $avg: '$ratings.grade' },
             },
         },
         {
