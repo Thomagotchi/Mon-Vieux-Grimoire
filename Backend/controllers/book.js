@@ -90,7 +90,11 @@ exports.getBestBooks = async (req, res) => {
       $group: {
         _id: "$_id",
         title: { $first: "$title" },
-        averageRating: { $avg: "$ratings.grade" },
+        author: { $first: "$author" },
+        imageUrl: { $first: "$imageUrl" },
+        year: { $first: "$year" },
+        genre: { $first: "$genre" },
+        averageRating: { $first: "$averageRating" },
       },
     },
     {
@@ -109,7 +113,6 @@ exports.getBestBooks = async (req, res) => {
 };
 
 exports.getAllBooks = (req, res) => {
-  console.log("");
   Book.find()
     .then((books) => res.status(200).json(books))
     .catch((error) => res.status(400).json({ error }));
