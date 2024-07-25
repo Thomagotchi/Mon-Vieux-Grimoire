@@ -71,6 +71,7 @@ export async function getBestRatedBooks() {
       method: "GET",
       url: `${API_ROUTES.BEST_RATED}`,
     });
+    // return console.log(response);
     return formatBooks(response.data);
   } catch (e) {
     console.error(e);

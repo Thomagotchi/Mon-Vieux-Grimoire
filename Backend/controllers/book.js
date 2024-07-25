@@ -84,8 +84,8 @@ exports.getBookById = (req, res) => {
     .catch((error) => res.status(404).json({ error }));
 };
 
-exports.getBestBooks = (req, res) => {
-  Book.aggregate([
+exports.getBestBooks = async (req, res) => {
+  const topBooks = await Book.aggregate([
     {
       $group: {
         _id: "$_id",
@@ -99,12 +99,17 @@ exports.getBestBooks = (req, res) => {
     {
       $limit: 3,
     },
-  ])
-    .then((books) => res.status(200).json(books))
-    .catch((error) => res.status(400).json({ error }));
+  ]);
+
+  try {
+    return res.status(200).json(topBooks);
+  } catch (error) {
+    return res.status(400).json({ error });
+  }
 };
 
 exports.getAllBooks = (req, res) => {
+  console.log("");
   Book.find()
     .then((books) => res.status(200).json(books))
     .catch((error) => res.status(400).json({ error }));
