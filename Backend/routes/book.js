@@ -5,6 +5,7 @@ const auth = require("../middleware/auth");
 const multer = require("../middleware/multer-config");
 
 const bookCtrl = require("../controllers/book");
+
 // #region Post
 router.post("/", auth, multer, bookCtrl.createBook);
 // #endregion
@@ -14,7 +15,7 @@ router.delete("/:id", auth, bookCtrl.deleteBook);
 // #endregion
 
 // #region Patch
-router.patch("/:id", auth, multer, bookCtrl.updateBook);
+router.put("/:id", auth, multer, bookCtrl.updateBook);
 // #endregion
 
 // #region Put
