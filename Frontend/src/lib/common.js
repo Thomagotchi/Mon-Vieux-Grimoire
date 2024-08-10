@@ -71,13 +71,13 @@ export async function getBestRatedBooks() {
       method: "GET",
       url: `${API_ROUTES.BEST_RATED}`,
     });
-    // return console.log(response);
     return formatBooks(response.data);
   } catch (e) {
     console.error(e);
     return [];
   }
 }
+
 export async function deleteBook(id) {
   try {
     await axios.delete(`${API_ROUTES.BOOKS}/${id}`, {
@@ -109,8 +109,8 @@ export async function rateBook(id, userId, rating) {
     book.id = book._id;
     return book;
   } catch (e) {
-    console.error(e);
-    return e.message;
+    console.error(e.response.data.message);
+    return alert(e.response.data.message);
   }
 }
 
@@ -143,9 +143,9 @@ export async function addBook(data) {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
     });
-  } catch (err) {
-    console.error(err);
-    return { error: true, message: err.message };
+  } catch (e) {
+    console.error(e.response.data.message);
+    return { error: true, message: e.response.data.message };
   }
 }
 

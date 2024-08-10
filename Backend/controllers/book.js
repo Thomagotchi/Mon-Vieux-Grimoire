@@ -1,25 +1,36 @@
 const Book = require("../models/book");
 const fs = require("fs");
+const path = require("path");
 
-exports.createBook = async (req, res) => {
-  try {
-    const bookObject = JSON.parse(req.body.book);
+exports.createBook = (req, res) => {
+  const bookObject = JSON.parse(req.body.book);
 
+  // Vérifie que la requête contient un fichier
+  if (!req.file) {
+    return res.status(400);
+  } else {
     delete bookObject._id;
     delete bookObject._userId;
 
+    const filename = req.file.filename;
+
+    // Crée un nouveau livre
     const book = new Book({
       ...bookObject,
       userId: req.auth.userId,
-      imageUrl: `${req.protocol}://${req.get("host")}/images/${
-        req.file.filename
-      }`,
+      imageUrl: `${req.protocol}://${req.get(
+        "host"
+      )}/images/resized_${filename}`,
     });
 
-    await book.save();
-    return res.status(201).json({ message: "Livre ajouté!" });
-  } catch (error) {
-    return res.status(403).json({ error });
+    try {
+      book.save();
+      res.status(201).json({ message: "Livre enregistré" });
+    } catch (error) {
+      res.status(400).json({
+        message: "Veuillez remplir tout les champs!",
+      });
+    }
   }
 };
 
@@ -36,9 +47,23 @@ exports.deleteBook = async (req, res) => {
   const filename = book.imageUrl.split("/images/")[1];
 
   // Suppression du fichier de l'image
-  fs.unlink(`images/${filename}`, (error) => {
+  const imagePath = path.join(__dirname, "..", "images", `${filename}`);
+  const resizedImagePath = path.join(
+    __dirname,
+    "..",
+    "images",
+    `resized_${filename}`
+  );
+
+  fs.unlink(imagePath, (error) => {
     if (error) {
-      console.log(error);
+      console.error("Erreur lors de la suppression de l'image :", error);
+    }
+  });
+
+  fs.unlink(resizedImagePath, (error) => {
+    if (error) {
+      console.error("Erreur lors de la suppression de l'image :", error);
     }
   });
 
@@ -83,9 +108,9 @@ exports.updateBook = async (req, res) => {
   }
 };
 
-exports.getBookById = async (req, res) => {
+exports.getBookById = (req, res) => {
   try {
-    const oneBook = await Book.findOne({ _id: req.params.id });
+    const oneBook = Book.findOne({ _id: req.params.id });
 
     return res.status(200).json(oneBook);
   } catch (error) {
@@ -150,16 +175,6 @@ exports.createRating = async (req, res) => {
     });
   }
 
-  const hasRating = await book.ratings.some(
-    (rating) => rating.userId === userId
-  );
-
-  if (hasRating) {
-    return res
-      .status(401)
-      .json({ message: "Vouz avez déjà envoyer une note pour ce livre!" });
-  }
-
   book.ratings.push({ userId, grade: rating });
 
   const bookGrades = book.ratings.map((rating) => rating.grade);
@@ -175,6 +190,8 @@ exports.createRating = async (req, res) => {
     await book.save();
     return res.status(200).json(book);
   } catch (error) {
-    return res.status(401).json({ error });
+    return res.status(402).json({
+      message: "Vouz n'avez pas donner de note valable pour ce livre!",
+    });
   }
 };

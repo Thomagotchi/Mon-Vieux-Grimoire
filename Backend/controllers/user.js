@@ -17,7 +17,7 @@ exports.signup = async (req, res) => {
       password: password,
     });
 
-    await user.save();
+    user.save();
     return res.status(201).json({ message: "Utilisateur créé !" });
   } catch (error) {
     return res.status(500).json({ error });

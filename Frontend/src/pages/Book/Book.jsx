@@ -16,7 +16,10 @@ function Book() {
   const [rating, setRating] = useState(0);
   const [userRated, setUserRated] = useState(false);
   const [loading, setLoading] = useState(true);
-
+  const [seed, setSeed] = useState(1);
+  const reset = () => {
+    setSeed(Math.random());
+  };
   const params = useParams();
 
   useEffect(() => {
@@ -96,12 +99,13 @@ function Book() {
               rating={rating}
               setRating={setRating}
               setBook={setBook}
+              resetSeed={reset}
               id={book.id}
             />
           </div>
         </div>
         <hr />
-        <BestRatedBooks />
+        <BestRatedBooks key={seed} />
       </div>
     ) : null;
   const deletedContent = book?.delete ? (

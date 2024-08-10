@@ -27,27 +27,25 @@ const storage = multer.diskStorage({
 module.exports = multer({ storage: storage }).single("image");
 
 // Redimensionnement de l'image
-module.exports.resizeImage = (req, res, next) => {
-  // Si aucun fichier, cela r'envoie vers le prochain middleware
+module.exports.resizeImage = async (req, res, next) => {
+  // On vérifie si un fichier a été téléchargé
   if (!req.file) {
     return next();
   }
 
-  const filePath = req.file.path;
-  const fileName = req.file.filename;
-  const newFilePath = path.join("images", `resized_${fileName}`);
+  const filePath = path.join(__dirname, "..", req.file.path);
+  const outputFilePath = path.join("images", `resized_${req.file.filename}`);
 
-  sharp(filePath)
-    .resize({ width: 206, height: 260 })
-    .toFile(newFilePath)
-    .then(() => {
-      fs.unlink(filePath, () => {
-        req.file.path = newFilePath;
-        next();
-      });
-    })
-    .catch((err) => {
-      console.log(err);
-      return next();
-    });
+  try {
+    await sharp(filePath)
+      .resize({ width: 206, height: 260 })
+      .toFile(outputFilePath);
+
+    fs.unlinkSync(filePath);
+    req.file.path = outputFilePath;
+    next();
+  } catch (error) {
+    console.log(error);
+    return next();
+  }
 };

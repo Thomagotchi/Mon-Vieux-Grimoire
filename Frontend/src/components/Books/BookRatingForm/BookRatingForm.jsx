@@ -7,8 +7,17 @@ import { generateStarsInputs, displayStars } from "../../../lib/functions";
 import { APP_ROUTES } from "../../../utils/constants";
 import { useUser } from "../../../lib/customHooks";
 import { rateBook } from "../../../lib/common";
+import { getBestRatedBooks } from "../../../lib/common";
 
-function BookRatingForm({ rating, setRating, userId, setBook, id, userRated }) {
+function BookRatingForm({
+  rating,
+  setRating,
+  userId,
+  setBook,
+  id,
+  userRated,
+  resetSeed,
+}) {
   const { connectedUser, auth } = useUser();
   const navigate = useNavigate();
   const { register, formState, handleSubmit } = useForm({
@@ -33,8 +42,9 @@ function BookRatingForm({ rating, setRating, userId, setBook, id, userRated }) {
     if (update) {
       // eslint-disable-next-line no-underscore-dangle
       setBook({ ...update, id: update._id });
+      resetSeed();
     } else {
-      alert(update);
+      console.log(update);
     }
   };
   return (
