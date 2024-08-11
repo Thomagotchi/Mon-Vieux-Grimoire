@@ -3,12 +3,14 @@ const fs = require("fs");
 const path = require("path");
 
 exports.createBook = (req, res) => {
+  // Crée un object a partir du JSON
   const bookObject = JSON.parse(req.body.book);
 
   // Vérifie que la requête contient un fichier
   if (!req.file) {
     return res.status(400);
   } else {
+    // Supprime les propriétés les IDs du livre par sécurité
     delete bookObject._id;
     delete bookObject._userId;
 
@@ -24,6 +26,7 @@ exports.createBook = (req, res) => {
     });
 
     try {
+      // Sauvegarder le livre dans la base de données
       book.save();
       res.status(201).json({ message: "Livre enregistré" });
     } catch (error) {
@@ -35,8 +38,10 @@ exports.createBook = (req, res) => {
 };
 
 exports.deleteBook = async (req, res) => {
+  // Trouve le livre correspondant dans la base de donnée
   const book = await Book.findOne({ _id: req.params.id });
 
+  // Si l'utilisateur n'as pas crée le livre, empeche la suppression et renvoie une erreur
   if (book.userId != req.auth.userId) {
     return res
       .status(401)
@@ -68,6 +73,7 @@ exports.deleteBook = async (req, res) => {
   });
 
   try {
+    // Supprime le livre de la base de données
     await Book.deleteOne({ _id: req.params.id });
     return res.status(200).json({ message: "Livre supprimé !" });
   } catch (error) {
@@ -77,12 +83,15 @@ exports.deleteBook = async (req, res) => {
 
 exports.updateBook = async (req, res) => {
   try {
+    // Trouve le livre correspondant dans la base de donnée
     const book = await Book.findOne({ _id: req.params.id });
 
+    // Vérifie si le livre existe
     if (!book) {
       return res.status(404).json({ message: "Livre non trouvé !" });
     }
 
+    // Vérifie si l'utilisateur a crée le livre sinon renvoie une erreur
     if (book.userId != req.auth.userId) {
       return res.status(401).json({ message: "Vous n'êtes pas autorisé !" });
     }
@@ -96,10 +105,12 @@ exports.updateBook = async (req, res) => {
         }
       : { ...req.body };
 
+    // Supprime l'ancienne image du livre quand l'image est modifié
     if (req.file && book.imageUrl) {
       deleteImage(book.imageUrl);
     }
 
+    // Met à jour le livre dans la base de données
     await Book.updateOne({ _id: req.params.id }, { ...bookData });
 
     res.status(200).json({ message: "Livre modifié !" });
@@ -108,19 +119,11 @@ exports.updateBook = async (req, res) => {
   }
 };
 
-exports.getBookById = (req, res) => {
-  try {
-    const oneBook = Book.findOne({ _id: req.params.id });
-
-    return res.status(200).json(oneBook);
-  } catch (error) {
-    return res.status(404).json({ error });
-  }
-};
-
 exports.getBookById = async (req, res) => {
   try {
+    // Trouve le livre correspondant dans la base de donnée
     const book = await Book.findOne({ _id: req.params.id });
+    // Renvoie le livre
     return res.status(200).json(book);
   } catch (error) {
     return res.status(404).json({ error });
@@ -129,6 +132,7 @@ exports.getBookById = async (req, res) => {
 
 exports.getBestBooks = async (req, res) => {
   try {
+    // 3 meilleurs livres agrégé
     const topBooks = await Book.aggregate([
       {
         $group: {
@@ -141,14 +145,17 @@ exports.getBestBooks = async (req, res) => {
           averageRating: { $first: "$averageRating" },
         },
       },
+      // Sort par meilleur note
       {
         $sort: { averageRating: -1 },
       },
+      // 3 Livres
       {
         $limit: 3,
       },
     ]);
 
+    // Renvoie les trois meilleurs livres en ordre
     return res.status(200).json(topBooks);
   } catch (error) {
     return res.status(400).json({ error });
@@ -157,7 +164,9 @@ exports.getBestBooks = async (req, res) => {
 
 exports.getAllBooks = async (req, res) => {
   try {
+    // Cherche tout les livres dans la base de donnée
     const books = await Book.find();
+    // Renvoie tout les livres
     return res.status(200).json(books);
   } catch (error) {
     return res.status(400).json({ error });
@@ -165,16 +174,19 @@ exports.getAllBooks = async (req, res) => {
 };
 
 exports.createRating = async (req, res) => {
+  // Trouve le livre correspondant dans la base de donnée
   const book = await Book.findOne({ _id: req.params.id });
   const userId = req.auth.userId;
   const rating = req.body.rating;
 
+  // Vérifier si la requête contient une note
   if (rating > 5 || rating < 1) {
     return res.status(401).json({
       message: "Vouz n'avez pas donner de note valable pour ce livre!",
     });
   }
 
+  // Ajouter la note à la liste des notes du livre et calculer la moyenne
   book.ratings.push({ userId, grade: rating });
 
   const bookGrades = book.ratings.map((rating) => rating.grade);
@@ -187,6 +199,7 @@ exports.createRating = async (req, res) => {
   book.averageRating = Math.round(bookAverage);
 
   try {
+    // Sauvegarde le nouveau Rating et nouvelle moyenne dans la base de donnée
     await book.save();
     return res.status(200).json(book);
   } catch (error) {

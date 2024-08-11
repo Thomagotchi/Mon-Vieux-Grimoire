@@ -5,6 +5,7 @@ const bookRouter = require("./routes/book");
 const userRouter = require("./routes/user");
 require("dotenv").config();
 
+// Connexion à la base de données MongoDB
 mongoose
   .connect(process.env.MONGO_URL, {
     useNewUrlParser: true,
@@ -14,8 +15,11 @@ mongoose
   .catch(() => console.log("Connexion à MongoDB échouée !"));
 
 const app = express();
+
+// Utilisation du middleware pour traiter les données en format JSON
 app.use(express.json());
 
+// Configure les en-têtes CORS
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
@@ -29,6 +33,7 @@ app.use((req, res, next) => {
   next();
 });
 
+// Routes pour l'authentification, livres et images
 app.use("/api/auth", userRouter);
 app.use("/api/books", bookRouter);
 app.use("/images", express.static(path.join(__dirname, "images")));

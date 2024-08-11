@@ -41,8 +41,11 @@ module.exports.resizeImage = async (req, res, next) => {
       .resize({ width: 206, height: 260 })
       .toFile(outputFilePath);
 
+    // Supprime l'ancienne version de l'image
     fs.unlinkSync(filePath);
     req.file.path = outputFilePath;
+
+    // Passe au prochain middleware
     next();
   } catch (error) {
     console.log(error);

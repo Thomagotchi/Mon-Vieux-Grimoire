@@ -1,6 +1,7 @@
 const http = require("http");
 const app = require("./app");
 
+// Fonction pour normaliser le port d'écoute du serveur
 const normalizePort = (val) => {
   const port = parseInt(val, 10);
 
@@ -12,6 +13,8 @@ const normalizePort = (val) => {
   }
   return false;
 };
+
+// Normalisation en utilisant la valeur de l'environnement
 const port = normalizePort(process.env.PORT || "4000");
 app.set("port", port);
 
@@ -34,8 +37,10 @@ const errorHandler = (error) => {
   }
 };
 
+// Création du serveur en utilisant Express
 const server = http.createServer(app);
 
+// Gestion d'erreurs
 server.on("error", errorHandler);
 server.on("listening", () => {
   const address = server.address();
