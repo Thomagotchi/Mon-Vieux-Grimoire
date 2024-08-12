@@ -4,15 +4,24 @@ const User = require("../models/user");
 
 exports.signup = async (req, res) => {
   try {
-    // Hasher le mot de passe
-    const password = await bcrypt.hash(req.body.password, 10);
-
     // Si l'email est déja enregistrer, r'envoie une erreur
     const existingUser = await User.findOne({ email: req.body.email });
 
     if (existingUser) {
-      return res.status(400).json({ message: "Cet email est déja utilisé !" });
+      return res.status(400).json({
+        message:
+          "Une erreur est survenue pendant la création de votre compte, réessayer avec une autre adresse mail et mot de passe !",
+      });
     }
+
+    if (!req.body.password) {
+      return res
+        .status(400)
+        .json({ message: "Veuillez ajouter un mot de passe !" });
+    }
+
+    // Hasher le mot de passe
+    const password = await bcrypt.hash(req.body.password, 10);
     // Crée un nouveau utilisateur
     const user = new User({
       email: req.body.email,
@@ -34,7 +43,9 @@ exports.login = async (req, res) => {
 
     // si l'utilisateur n'existe pas dans la base de donnée cela renvoie une erreur
     if (!existingUser) {
-      return res.status(412).json({ message: "Utilisateur non trouvé !" });
+      return res
+        .status(411)
+        .json({ message: "Votre email ou mot de passe est incorrect !" });
     }
 
     // Vérifie si le mot de passe hasher et identique sinon renvoie une erreur
@@ -44,7 +55,9 @@ exports.login = async (req, res) => {
     );
 
     if (!checkPassword) {
-      return res.status(411).json({ message: "Mot de passe incorrect !" });
+      return res
+        .status(411)
+        .json({ message: "Votre email ou mot de passe est incorrect !" });
     }
 
     return res.status(200).json({

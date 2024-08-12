@@ -9,6 +9,19 @@ exports.createBook = (req, res) => {
   // Vérifie que la requête contient un fichier
   if (!req.file) {
     return res.status(400);
+  }
+  // Vérifie que tout les champs de la requête sont remplis
+  if (
+    !req.body.title ||
+    !req.body.author ||
+    !req.body.year ||
+    !req.body.genre ||
+    !req.body.ratings.grade
+  ) {
+    // Sinon cela renvoie une erreur
+    return res.status(400).json({
+      message: "Veuillez remplir tout les champs!",
+    });
   } else {
     // Supprime les propriétés les IDs du livre par sécurité
     delete bookObject._id;
@@ -24,14 +37,15 @@ exports.createBook = (req, res) => {
         "host"
       )}/images/resized_${filename}`,
     });
-
+    console.log(req.body);
     try {
       // Sauvegarder le livre dans la base de données
       book.save();
       res.status(201).json({ message: "Livre enregistré" });
     } catch (error) {
       res.status(400).json({
-        message: "Veuillez remplir tout les champs!",
+        message:
+          "Une erreur est survenue pendant l'enregistrement de votre livre !",
       });
     }
   }
@@ -176,6 +190,7 @@ exports.getAllBooks = async (req, res) => {
 exports.createRating = async (req, res) => {
   // Trouve le livre correspondant dans la base de donnée
   const book = await Book.findOne({ _id: req.params.id });
+
   const userId = req.auth.userId;
   const rating = req.body.rating;
 
