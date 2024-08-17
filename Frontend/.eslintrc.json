@@ -11,11 +11,11 @@
     ],
     "parserOptions": {
         "ecmaVersion": "latest",
-        "sourceType": "script"
+        "sourceType": "module"
     },
     "plugins": [
         "react"
     ],
     "rules": {
-      }
+    }
 }

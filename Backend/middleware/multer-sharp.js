@@ -18,37 +18,54 @@ const storage = multer.diskStorage({
 
   // Noms des images
   filename: (req, file, callback) => {
-    const name = file.originalname.replace(/[\s.]+/g, "_");
+    const name = file.originalname.split(" ").join("_");
     const extension = MIME_TYPES[file.mimetype];
     callback(null, name + Date.now() + "." + extension);
   },
 });
 
-module.exports = multer({ storage: storage }).single("image");
+// Upload de l'image
+const uploadImage = multer({
+  storage: storage,
+  fileFilter: (req, file, callback) => {
+    if (MIME_TYPES[file.mimetype]) {
+      callback(null, true);
+    } else {
+      callback(new Error("Type de fichier invalide !"));
+    }
+  },
+}).single("image");
 
 // Redimensionnement de l'image
-module.exports.resizeImage = async (req, res, next) => {
+const resizeImage = (req, res, next) => {
   // On vérifie si un fichier a été téléchargé
   if (!req.file) {
     return next();
   }
 
   const filePath = path.join(__dirname, "..", req.file.path);
-  const outputFilePath = path.join("images", `resized_${req.file.filename}`);
 
-  try {
-    await sharp(filePath)
-      .resize({ width: 206, height: 260 })
-      .toFile(outputFilePath);
+  console.log(filePath);
 
-    // Supprime l'ancienne version de l'image
-    fs.unlinkSync(filePath);
-    req.file.path = outputFilePath;
+  sharp.cache(false);
 
-    // Passe au prochain middleware
-    next();
-  } catch (error) {
-    console.log(error);
-    return next();
-  }
+  sharp(filePath)
+    .resize({ width: 206, height: 260 })
+    .toBuffer()
+    .then((data) => {
+      sharp(data)
+        .toFile(filePath)
+        .then(() => {
+          // Passe au prochain middleware
+          next();
+        })
+        .catch((error) => {
+          next(error);
+        });
+    });
+};
+
+module.exports = {
+  uploadImage,
+  resizeImage,
 };

@@ -6,21 +6,44 @@ exports.createBook = (req, res) => {
   // Crée un object a partir du JSON
   const bookObject = JSON.parse(req.body.book);
 
-  // Vérifie que la requête contient un fichier
-  if (!req.file) {
-    return res.status(400);
-  }
+  console.log(bookObject);
+  console.log(req.body.book);
+
   // Vérifie que tout les champs de la requête sont remplis
   if (
-    !req.body.title ||
-    !req.body.author ||
-    !req.body.year ||
-    !req.body.genre ||
-    !req.body.ratings.grade
+    !bookObject.title ||
+    !bookObject.author ||
+    !bookObject.year ||
+    !bookObject.genre ||
+    bookObject.averageRating === 0
   ) {
-    // Sinon cela renvoie une erreur
+    // Sinon cela supprime l'image envoyer avec la fausse requette et renvoie une erreur
+    fs.unlink(
+      path.join(__dirname, "..", "images", `${req.file.filename}`),
+      (error) => {
+        if (error) {
+          console.error("Erreur lors de la suppression de l'image :", error);
+        }
+      }
+    );
     return res.status(400).json({
       message: "Veuillez remplir tout les champs!",
+    });
+  }
+
+  // Verifie si l'année est un chiffre
+  if (isNaN(bookObject.year)) {
+    // Sinon cela supprime l'image envoyer avec la fausse requette et renvoie une erreur
+    fs.unlink(
+      path.join(__dirname, "..", "images", `${req.file.filename}`),
+      (error) => {
+        if (error) {
+          console.error("Erreur lors de la suppression de l'image :", error);
+        }
+      }
+    );
+    return res.status(400).json({
+      message: "Veuillez saisir une année valable!",
     });
   } else {
     // Supprime les propriétés les IDs du livre par sécurité
@@ -33,9 +56,7 @@ exports.createBook = (req, res) => {
     const book = new Book({
       ...bookObject,
       userId: req.auth.userId,
-      imageUrl: `${req.protocol}://${req.get(
-        "host"
-      )}/images/resized_${filename}`,
+      imageUrl: `${req.protocol}://${req.get("host")}/images/${filename}`,
     });
     console.log(req.body);
     try {
@@ -67,20 +88,8 @@ exports.deleteBook = async (req, res) => {
 
   // Suppression du fichier de l'image
   const imagePath = path.join(__dirname, "..", "images", `${filename}`);
-  const resizedImagePath = path.join(
-    __dirname,
-    "..",
-    "images",
-    `resized_${filename}`
-  );
 
   fs.unlink(imagePath, (error) => {
-    if (error) {
-      console.error("Erreur lors de la suppression de l'image :", error);
-    }
-  });
-
-  fs.unlink(resizedImagePath, (error) => {
     if (error) {
       console.error("Erreur lors de la suppression de l'image :", error);
     }
@@ -107,7 +116,9 @@ exports.updateBook = async (req, res) => {
 
     // Vérifie si l'utilisateur a crée le livre sinon renvoie une erreur
     if (book.userId != req.auth.userId) {
-      return res.status(401).json({ message: "Vous n'êtes pas autorisé !" });
+      return res
+        .status(401)
+        .json({ message: "Vous n'êtes pas autorisé de modifier ce livre !" });
     }
 
     const bookData = req.file
@@ -119,9 +130,36 @@ exports.updateBook = async (req, res) => {
         }
       : { ...req.body };
 
+    console.log(bookData);
+
+    if (
+      !bookData.title ||
+      !bookData.author ||
+      !bookData.year ||
+      !bookData.genre
+    ) {
+      // Sinon cela supprime l'image envoyer avec la fausse requette et renvoie une erreur
+      return res.status(400).json({
+        message: "Veuillez remplir tout les champs!",
+      });
+    }
+
+    if (isNaN(bookData.year)) {
+      // Sinon cela supprime l'image envoyer avec la fausse requette et renvoie une erreur
+      return res.status(400).json({
+        message: "Veuillez saisir une année valable!",
+      });
+    }
+
     // Supprime l'ancienne image du livre quand l'image est modifié
     if (req.file && book.imageUrl) {
-      deleteImage(book.imageUrl);
+      const oldFileName = book.imageUrl.split("/images/")[1];
+
+      fs.unlink(path.join(__dirname, "..", "images", oldFileName), (error) => {
+        if (error) {
+          console.error("Erreur lors de la suppression de l'image :", error);
+        }
+      });
     }
 
     // Met à jour le livre dans la base de données
@@ -129,7 +167,9 @@ exports.updateBook = async (req, res) => {
 
     res.status(200).json({ message: "Livre modifié !" });
   } catch (error) {
-    res.status(400).json({ error });
+    res.status(400).json({
+      message: "Une erreur est survenue pendant la modification du livre !",
+    });
   }
 };
 
